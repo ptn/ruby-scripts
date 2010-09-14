@@ -25,17 +25,17 @@ module XMLBuilder
       @name = name
       @value = value
       @attrs = attrs
-      @tags = []
+      @children = []
       # 3-elem array: first is opening tag, middle is indented content (value or
       # children), last is closing tag.
       @repr = create_repr
     end
 
-    def insert_tag(tag)
+    def insert_child(child)
       # tags with value can't have children and viceversa
       #XXX should this fail silently?
       unless @value
-        @tags << tag
+        @children << child
         @repr = create_repr
       end
     end
@@ -51,8 +51,8 @@ module XMLBuilder
       opening_tag << ">"
       @repr << opening_tag
       @repr << @value if @value
-      # If there was a value, then @tags will be empty.
-      @tags.each do |child|
+      # If there was a value, then @children will be empty.
+      @children.each do |child|
         @repr << child.create_repr
       end
       @repr << closing_tag
@@ -119,7 +119,7 @@ module XMLBuilder
     private
 
     def insert_tag(tag, value, attrs)
-      @root_tag.insert_tag Tag.new tag, value, attrs
+      @root_tag.insert_child Tag.new tag, value, attrs
     end
   end
 end
