@@ -11,8 +11,6 @@
 #   | 'end' reserved keyword | close corresponding tag |
 #   |                        |                         |
 #
-#   TODO
-#  1.  Support for nested tags with blocks
 
 module XMLBuilder
 
@@ -44,6 +42,7 @@ module XMLBuilder
     def create_repr
       @repr = []
       opening_tag = "<#{@name}"
+      #BUG There is no closing tag if there's no value
       closing_tag = "</#{@name}>"
       @attrs.each_pair do |k, v|
         opening_tag << " #{k}=\"#{v}\" "
@@ -88,9 +87,11 @@ module XMLBuilder
 
     def initialize
       @root_tag = Tag.new "xml", nil, {}
+      # @current_tag is the tag that receives the children.
+      @current_tag = @root_tag
     end
 
-    def method_missing(tag, *args)
+    def method_missing(tagname, *args, &blk)
       case args.length
       when 0
         value = nil
@@ -107,19 +108,19 @@ module XMLBuilder
         value = args[0]
         attrs = args[1]
       end
-      insert_tag tag, value, attrs
+      tag = Tag.new tagname, value, attrs
+      @current_tag.insert_child tag
+      if blk
+        tmp = @current_tag
+        @current_tag = tag
+        blk.call
+        @current_tag = tmp
+      end
     end
 
     # Form the final string representation of the XML document.
     def render
       @root_tag.render
-    end
-
-
-    private
-
-    def insert_tag(tag, value, attrs)
-      @root_tag.insert_child Tag.new tag, value, attrs
     end
   end
 end
@@ -127,8 +128,13 @@ end
 
 if __FILE__ == $0
   xml = XMLBuilder::XMLBuilder.new
-  xml.name "Pablo", :capitalize => 1
-  xml.surname "Torres"
+  xml.person do
+    xml.name "Pablo", :capitalize => 1
+    xml.surname do
+      xml.father_surname "Torres"
+      xml.mother_surname "Navarrete"
+    end
+  end
   xml.novaluenoattrs
   xml.novalueyesattrs :at1 => "1", :at2 => "2"
   puts xml.render
