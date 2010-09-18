@@ -42,11 +42,10 @@ module XMLBuilder
     def create_repr
       @repr = []
       opening_tag = "<#{@name}"
-      #BUG There is no closing tag if there's no value
-      closing_tag = "</#{@name}>"
       @attrs.each_pair do |k, v|
         opening_tag << " #{k}=\"#{v}\" "
       end
+      opening_tag << "/" unless @value || @children.length > 0
       opening_tag << ">"
       @repr << opening_tag
       @repr << @value if @value
@@ -54,7 +53,7 @@ module XMLBuilder
       @children.each do |child|
         @repr << child.create_repr
       end
-      @repr << closing_tag
+      @repr << "</#{@name}>" if @value || @children.length > 0
       @repr
     end
 
@@ -65,7 +64,7 @@ module XMLBuilder
     def render(repr=@repr, indent=0)
       output = "\t" * indent
       output << repr[0] + "\n"
-      if repr.length > 2
+      if repr.length > 1
         if (repr[1].is_a? String) && (repr[1] != "")
           output << "\t" * indent * 2
           output << repr[1] + "\n"
@@ -75,9 +74,9 @@ module XMLBuilder
             output << tmp + "\n"
           end
         end
+        output << "\t" * indent
+        output << repr[-1] + "\n"
       end
-      output << "\t" * indent
-      output << repr[-1] + "\n"
       output
     end
   end
