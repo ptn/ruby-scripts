@@ -1,4 +1,4 @@
-# Builder clone
+# Builder clone (http://builder.rubyforge.org/)
 # Started on 05/09/10
 
 module XMLBuilder
