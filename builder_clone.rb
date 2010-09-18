@@ -1,44 +1,36 @@
 # Builder clone
-# 05/09/2010
-
-# This program provides an XML generator in Ruby.  Summary:
-#
-#   | ruby code              | xml translation         |
-#   | method                 | tag                     |
-#   | block argument         | nested tag              |
-#   | positional parameter   | value of tag            |
-#   | keyword argument       | attribute for a tag     |
-#   | 'end' reserved keyword | close corresponding tag |
-#   |                        |                         |
-#
+# Started on 05/09/10
 
 module XMLBuilder
 
   # Represents a tag, knows it's name, value, attributes and nested tags.
   class Tag
 
-    attr_reader :repr
+    attr_reader :repr, :name, :value, :attrs, :repr
 
     def initialize(name, value, attrs)
       @name = name
       @value = value
       @attrs = attrs
       @children = []
-      # 3-elem array: first is opening tag, middle is indented content (value or
-      # children), last is closing tag.
       @repr = create_repr
     end
 
     def insert_child(child)
-      # tags with value can't have children and viceversa
-      #XXX should this fail silently?
+      # tags with value never have children
       unless @value
         @children << child
         @repr = create_repr
       end
     end
 
-    # Form the array representation of self.
+    # Return an array representation of self.
+    #
+    # If the tag is self-closing (like HTML's <input ... />), that is, if it
+    # has neither a value nor children, then this array only has 1 elem, said
+    # tag.  If it has either of them, then the array has 3 sections: the first
+    # is the opening tag, the middle one is the indented content (it's value as a
+    # string or children as an array), and the last one is the closing tag.
     def create_repr
       @repr = []
       opening_tag = "<#{@name}"
@@ -49,7 +41,7 @@ module XMLBuilder
       opening_tag << ">"
       @repr << opening_tag
       @repr << @value if @value
-      # If there was a value, then @children will be empty.
+      # If there is a value, then @children will be empty.
       @children.each do |child|
         @repr << child.create_repr
       end
@@ -57,10 +49,12 @@ module XMLBuilder
       @repr
     end
 
-    # Return the final XML string.
+    # Return the final XML string for this tag.
     #
-    # The param tells every recursive call how deep in indentation it is so it
-    # knows how many tabs to insert.
+    # It recursively builds the XML string for it's children, so the repr param
+    # tells it what array repr to work with.  The second param tells every
+    # recursive call how deep in nesting it is so it knows how many tabs to
+    # insert for indentation.
     def render(repr=@repr, indent=0)
       output = "\t" * indent
       output << repr[0] + "\n"
@@ -82,6 +76,8 @@ module XMLBuilder
   end
 
 
+  # Class that can construct every possible tag, with attributes, values and
+  # nested tags (children).
   class XMLBuilder::XMLBuilder
 
     def initialize
@@ -117,7 +113,7 @@ module XMLBuilder
       end
     end
 
-    # Form the final string representation of the XML document.
+    # Return the final string representation of the XML document.
     def render
       @root_tag.render
     end
