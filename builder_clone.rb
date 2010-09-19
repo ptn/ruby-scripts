@@ -8,10 +8,10 @@ module XMLBuilder
 
     attr_reader :repr, :name, :value, :attrs
 
-    def initialize(name, value, attrs)
+    def initialize(name, params={})
       @name = name
-      @value = value
-      @attrs = attrs
+      @value = params[:value]
+      @attrs = params[:attrs] || {}
       @children = []
       @repr = create_repr
     end
@@ -29,7 +29,7 @@ module XMLBuilder
     # If the tag is self-closing (like HTML's <input ... />), that is, if it
     # has neither a value nor children, then this array only has 1 elem, said
     # tag.  If it has either of them, then the array has 3 sections: the first
-    # is the opening tag, the middle one is the indented content (it's value as a
+    # is the opening tag, the middle one is the nested content (it's value as a
     # string or children as an array), and the last one is the closing tag.
     def create_repr
       @repr = []
@@ -86,7 +86,7 @@ module XMLBuilder
   class XMLBuilder::XMLBuilder
 
     def initialize
-      @root_tag = Tag.new "xml", nil, {}
+      @root_tag = Tag.new "xml"
       # @current_tag is the tag that receives the children.
       @current_tag = @root_tag
     end
@@ -108,7 +108,7 @@ module XMLBuilder
         value = args[0]
         attrs = args[1]
       end
-      tag = Tag.new tagname, value, attrs
+      tag = Tag.new tagname, :value => value, :attrs => attrs
       @current_tag.insert_child tag
       if blk
         tmp = @current_tag
