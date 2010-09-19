@@ -69,7 +69,7 @@ module XMLBuilder
         else
           repr[1...-1].each do |child_repr|
             tmp = render(:repr => child_repr, :level => level + 1)
-            output << tmp + "\n"
+            output << tmp
           end
         end
         output << " " * qty * level
