@@ -54,25 +54,26 @@ module XMLBuilder
     # It recursively builds the XML string for it's children.  The params hash
     # expects 3 params: repr, the array representation of the current tag (self
     # or one of it's children); level, which tells the recursive call how deep
-    # in nesting it is so it can handle indentation; and qty, the amount of
+    # in nesting it is so it can handle indentation; and indent, the amount of
     # spaces to use when indenting.
     def render(params={})
       repr = params[:repr] || @repr
       level = params[:level] || 0
-      qty = params[:qty] || 2
-      output = " " * qty * level
+      indent = params[:indent] || 2
+      output = " " * indent * level
       output << repr[0] + "\n"
       if repr.length > 1
         if (repr[1].is_a? String) && (repr[1] != "")
-          output << " " * qty * level * 2
+          output << " " * indent * level * 2
           output << repr[1] + "\n"
         else
           repr[1...-1].each do |child_repr|
-            tmp = render(:repr => child_repr, :level => level + 1)
+            tmp = render(:repr => child_repr, :level => level + 1,
+                         :indent => indent)
             output << tmp
           end
         end
-        output << " " * qty * level
+        output << " " * indent * level
         output << repr[-1] + "\n"
       end
       output
@@ -84,10 +85,11 @@ module XMLBuilder
   # nested tags (children).
   class XMLBuilder::XMLBuilder
 
-    def initialize
+    def initialize(params={})
       @root_tag = Tag.new "xml", nil, {}
       # @current_tag is the tag that receives the children.
       @current_tag = @root_tag
+      @indent = params[:indent] || 2
     end
 
     def method_missing(tagname, *args, &blk)
@@ -119,7 +121,7 @@ module XMLBuilder
 
     # Return the final string representation of the XML document.
     def render
-      @root_tag.render
+      @root_tag.render :indent => @indent
     end
   end
 end
