@@ -51,24 +51,28 @@ module XMLBuilder
 
     # Return the final XML string for this tag.
     #
-    # It recursively builds the XML string for it's children, so the repr param
-    # tells it what array repr to work with.  The second param tells every
-    # recursive call how deep in nesting it is so it knows how many tabs to
-    # insert for indentation.
-    def render(repr=@repr, indent=0)
-      output = "\t" * indent
+    # It recursively builds the XML string for it's children.  The params hash
+    # expects 3 params: repr, the array representation of the current tag (self
+    # or one of it's children); level, which tells the recursive call how deep
+    # in nesting it is so it can handle indentation; and qty, the amount of
+    # spaces to use when indenting.
+    def render(params={})
+      repr = params[:repr] || @repr
+      level = params[:level] || 0
+      qty = params[:qty] || 2
+      output = " " * qty * level
       output << repr[0] + "\n"
       if repr.length > 1
         if (repr[1].is_a? String) && (repr[1] != "")
-          output << "\t" * indent * 2
+          output << " " * qty * level * 2
           output << repr[1] + "\n"
         else
           repr[1...-1].each do |child_repr|
-            tmp = render(child_repr, indent + 1)
+            tmp = render(:repr => child_repr, :level => level + 1)
             output << tmp + "\n"
           end
         end
-        output << "\t" * indent
+        output << " " * qty * level
         output << repr[-1] + "\n"
       end
       output
