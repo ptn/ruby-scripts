@@ -64,7 +64,7 @@ module XMLBuilder
       output << repr[0] + "\n"
       if repr.length > 1
         if (repr[1].is_a? String) && (repr[1] != "")
-          output << " " * indent * level * 2
+          output << " " * indent * (level + 1)
           output << repr[1] + "\n"
         else
           repr[1...-1].each do |child_repr|
