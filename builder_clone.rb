@@ -3,7 +3,8 @@
 
 module XMLBuilder
 
-  # Represents a tag, knows it's name, value, attributes and nested tags.
+  # Represents a tag, knows it's name, value, attributes, nested tags and
+  # comments.
   class Tag
 
     attr_reader :repr, :name, :value, :attrs
@@ -12,70 +13,47 @@ module XMLBuilder
       @name = name
       @value = params[:value]
       @attrs = params[:attrs] || {}
+      @comments = params[:comments] || []
       @children = []
-      @repr = create_repr
     end
 
     def insert_child(child)
       # tags with value never have children
-      unless @value
-        @children << child
-        @repr = create_repr
-      end
+      @children << child unless @value
     end
 
-    # Return an array representation of self.
+    # Return the final XML string for this tag.
     #
-    # If the tag is self-closing (like HTML's <input ... />), that is, if it
-    # has neither a value nor children, then this array only has 1 elem, said
-    # tag.  If it has either of them, then the array has 3 sections: the first
-    # is the opening tag, the middle one is the nested content (it's value as a
-    # string or children as an array), and the last one is the closing tag.
-    def create_repr
-      @repr = []
+    # It recursively builds the XML string for it's children.  The params hash
+    # expects 2 params: level, which tells the recursive call how deep
+    # in nesting it is so it can handle indentation; and indent, the amount of
+    # spaces to use when indenting.
+    def render(params={})
+      level = params[:level] || 0
+      indent = params[:indent] || 2
+      indent_str = " " * indent * level
+      output = ""
+      if @comments.length > 0
+        output << "\n" + indent_str
+        join_str = "\n" + indent_str
+        output << "<!-- " + @comments.join(join_str) + " --!>\n\n"
+      end
+      output << indent_str
       opening_tag = "<#{@name}"
       @attrs.each_pair do |k, v|
         opening_tag << " #{k}=\"#{v}\" "
       end
       opening_tag << "/" unless @value || @children.length > 0
       opening_tag << ">"
-      @repr << opening_tag
-      @repr << @value if @value
-      # If there is a value, then @children will be empty.
-      @children.each do |child|
-        @repr << child.create_repr
-      end
-      @repr << "</#{@name}>" if @value || @children.length > 0
-      @repr
-    end
-
-    # Return the final XML string for this tag.
-    #
-    # It recursively builds the XML string for it's children.  The params hash
-    # expects 3 params: repr, the array representation of the current tag (self
-    # or one of it's children); level, which tells the recursive call how deep
-    # in nesting it is so it can handle indentation; and indent, the amount of
-    # spaces to use when indenting.
-    def render(params={})
-      repr = params[:repr] || @repr
-      level = params[:level] || 0
-      indent = params[:indent] || 2
-      output = " " * indent * level
-      output << repr[0] + "\n"
-      if repr.length > 1
-        if (repr[1].is_a? String) && (repr[1] != "")
-          output << " " * indent * (level + 1)
-          output << repr[1] + "\n"
-        else
-          repr[1...-1].each do |child_repr|
-            tmp = render(:repr => child_repr, :level => level + 1,
-                         :indent => indent)
-            output << tmp
-          end
+      output << opening_tag
+      if @value
+        output << "\n" + " " * indent * (level + 1) + @value
+      elsif @children.length > 0
+        @children.each do |child|
+          output <<  "\n" + child.render(:level => level + 1, :indent => indent)
         end
-        output << " " * indent * level
-        output << repr[-1] + "\n"
       end
+      output <<  "\n" + indent_str + "</#{@name}>" if @value || @children.length > 0
       output
     end
   end
@@ -89,6 +67,8 @@ module XMLBuilder
       @root_tag = Tag.new "xml"
       # @current_tag is the tag that receives the children.
       @current_tag = @root_tag
+      # to include in the next inserted tag
+      @comments_buf = []
     end
 
     def method_missing(tagname, *args, &blk)
@@ -108,7 +88,8 @@ module XMLBuilder
         value = args[0]
         attrs = args[1]
       end
-      tag = Tag.new tagname, :value => value, :attrs => attrs
+      tag = Tag.new tagname, value: value, attrs: attrs, comments: @comments_buf
+      @comments_buf = []
       @current_tag.insert_child tag
       if blk
         tmp = @current_tag
@@ -116,6 +97,11 @@ module XMLBuilder
         blk.call
         @current_tag = tmp
       end
+    end
+
+    # Adds comments to the next inserted tag.
+    def comment!(str)
+      @comments_buf << str
     end
 
     # Return the final string representation of the XML document.
@@ -136,6 +122,8 @@ if __FILE__ == $0
     end
   end
   xml.novaluenoattrs
+  xml.comment! "Testing comments"
+  xml.comment! "This should be a different line"
   xml.novalueyesattrs :at1 => "1", :at2 => "2"
   puts xml.render :indent => 4
 end
