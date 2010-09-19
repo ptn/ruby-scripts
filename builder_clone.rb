@@ -128,7 +128,7 @@ end
 
 
 if __FILE__ == $0
-  xml = XMLBuilder::XMLBuilder.new
+  xml = XMLBuilder::XMLBuilder.new :indent => 4
   xml.person do
     xml.name "Pablo", :capitalize => 1
     xml.surname do
