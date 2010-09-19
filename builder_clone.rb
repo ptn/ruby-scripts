@@ -85,11 +85,10 @@ module XMLBuilder
   # nested tags (children).
   class XMLBuilder::XMLBuilder
 
-    def initialize(params={})
+    def initialize
       @root_tag = Tag.new "xml", nil, {}
       # @current_tag is the tag that receives the children.
       @current_tag = @root_tag
-      @indent = params[:indent] || 2
     end
 
     def method_missing(tagname, *args, &blk)
@@ -120,15 +119,15 @@ module XMLBuilder
     end
 
     # Return the final string representation of the XML document.
-    def render
-      @root_tag.render :indent => @indent
+    def render(params={})
+      @root_tag.render :indent => params[:indent] || 2
     end
   end
 end
 
 
 if __FILE__ == $0
-  xml = XMLBuilder::XMLBuilder.new :indent => 4
+  xml = XMLBuilder::XMLBuilder.new
   xml.person do
     xml.name "Pablo", :capitalize => 1
     xml.surname do
@@ -138,5 +137,5 @@ if __FILE__ == $0
   end
   xml.novaluenoattrs
   xml.novalueyesattrs :at1 => "1", :at2 => "2"
-  puts xml.render
+  puts xml.render :indent => 4
 end
