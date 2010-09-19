@@ -6,7 +6,7 @@ module XMLBuilder
   # Represents a tag, knows it's name, value, attributes and nested tags.
   class Tag
 
-    attr_reader :repr, :name, :value, :attrs, :repr
+    attr_reader :repr, :name, :value, :attrs
 
     def initialize(name, value, attrs)
       @name = name
